@@ -7,24 +7,40 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:integration_test/integration_test.dart';
 
 import 'package:integration_test_tutorial/main.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
+  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+
+  testWidgets(
+      "Not inputting a text and wanting to go to the display page shows "
+      "an error and prevents from going to the display page.",
+      (WidgetTester tester) async {
     await tester.pumpWidget(MyApp());
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    // Input this text
+    final inputText = 'Hello there, this is an input.';
+    await tester.enterText(find.byKey(Key('your-text-field')), inputText);
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+    // Tap on a FAB
+    await tester.tap(find.byType(FloatingActionButton));
+    await tester.pumpAndSettle();
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    // We should be in the DisplayPage that displays the inputted text
+    expect(find.byType(TypingPage), findsNothing);
+    expect(find.byType(DisplayPage), findsOneWidget);
+    expect(find.text(inputText), findsOneWidget);
+
+    // Tap on the back arrow in the AppBar
+    await tester.tap(find.byType(BackButton));
+    await tester.pumpAndSettle();
+
+    // We should be back in the TypingPage and the previously inputted text
+    // should be cleared out
+    expect(find.byType(TypingPage), findsOneWidget);
+    expect(find.byType(DisplayPage), findsNothing);
+    expect(find.text(inputText), findsNothing);
   });
 }
